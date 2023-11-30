@@ -195,14 +195,19 @@
 
       // Timer JavaScript
       function startTimer(duration) {
-        var timer = duration;
+        var timer = duration * 60;
         timerId = setInterval(function () {
-          if (timer <= 0) {
+          var minutes = parseInt(timer / 60, 10);
+          var seconds = parseInt(timer % 60, 10);
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
+
+          if (--timer < 0) {
             clearInterval(timerId);
             setTimer("Time out!");
             showModal("You've run out of time");
           } else {
-            setTimer(--timer);
+            setTimer(minutes + ":" + seconds);
           }
         }, 1000);
       }
