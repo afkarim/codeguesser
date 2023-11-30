@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <title>Code Guesser</title>
+    <style>
+      /* General Styles */
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+      .container {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      .active {
+        display: flex;
+      }
+      input,
+      button {
+        padding: 10px;
+        margin: 5px;
+        font-size: 16px;
+      }
+
+      /* Timer Setup Styles */
+      .setup-container input[type="number"] {
+        width: 50px;
+      }
+
+      /* Keypad Styles */
+      .navbar {
+        background-color: #333;
+        color: white;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 20px;
+      }
+      .timer {
+        font-size: 50px;
+      }
+      .display-container {
+        background-color: #f2f2f2;
+        border: 2px solid #ddd;
+        padding: 20px;
+        max-width: fit-content;
+        margin: auto;
+      }
+      #display {
+        margin-bottom: 20px;
+        text-align: center;
+        font-size: 20px;
+        letter-spacing: 5px;
+        min-width: 140px;
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+      }
+      .keypad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 10px;
+        margin: auto;
+      }
+      .keypad button {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+      }
+
+      /* The Modal (background) */
+      .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0, 0, 0); /* Fallback color */
+        background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+      }
+
+      /* Modal Content */
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+      }
+
+      /* The Close Button */
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <span>Code Guesser</span>
+      <span class="timer" id="timer">--</span>
+    </div>
+    <!-- Timer Setup Container -->
+    <div class="container setup-container active">
+      <div>
+        <h2>Setup Timer and Code</h2>
+        <input
+          type="number"
+          id="timerValue"
+          min="1"
+          max="99"
+          placeholder="Timer (1-99)"
+        />
+        <input
+          type="password"
+          id="codeValue"
+          placeholder="4-Digit Code"
+          maxlength="4"
+        />
+        <button onclick="startApp()">Start</button>
+      </div>
+    </div>
+
+    <div id="myModal" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="message">Congratulations! You've entered the correct code!</p>
+      </div>
+    </div>
+    <!-- Keypad Container -->
+    <div class="container keypad-container">
+      <div class="display-container">
+        <div id="display"></div>
+        <div class="keypad">
+          <!-- Keypad buttons -->
+          <button onclick="pressKey('1')">1</button>
+          <button onclick="pressKey('2')">2</button>
+          <button onclick="pressKey('3')">3</button>
+          <button onclick="pressKey('4')">4</button>
+          <button onclick="pressKey('5')">5</button>
+          <button onclick="pressKey('6')">6</button>
+          <button onclick="pressKey('7')">7</button>
+          <button onclick="pressKey('8')">8</button>
+          <button onclick="pressKey('9')">9</button>
+          <button onclick="deleteKey()">DEL</button>
+          <button onclick="pressKey('0')">0</button>
+          <button onclick="enterKey()">ENTER</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let code = "";
+      var timerId;
+      // Setup Page JavaScript
+      function startApp() {
+        var timerValue = document.getElementById("timerValue").value;
+        var codeValue = document.getElementById("codeValue").value;
+        code = codeValue;
+        if (
+          timerValue < 1 ||
+          timerValue > 99 ||
+          codeValue.length != 4 ||
+          isNaN(codeValue)
+        ) {
+          alert("Please enter valid timer value (1-99) and a 4-digit code.");
+          return;
+        }
+
+        // Hide setup container and show keypad container
+        document.querySelector(".setup-container").classList.remove("active");
+        document.querySelector(".keypad-container").classList.add("active");
+        setTimer(timerValue);
+        // Start the timer
+        startTimer(timerValue);
+      }
+
+      // Timer JavaScript
+      function startTimer(duration) {
+        var timer = duration;
+        timerId = setInterval(function () {
+          if (timer <= 0) {
+            clearInterval(timerId);
+            setTimer("Time out!");
+            showModal("You've run out of time");
+          } else {
+            setTimer(--timer);
+          }
+        }, 1000);
+      }
+
+      function setTimer(message) {
+        var timerElement = document.getElementById("timer");
+        timerElement.textContent = message;
+      }
+
+      // Keypad JavaScript
+      // JavaScript for keypad
+      function pressKey(key) {
+        var display = document.getElementById("display");
+        if (display.textContent.length < 4) {
+          display.textContent += key;
+        }
+      }
+
+      function deleteKey() {
+        var display = document.getElementById("display");
+        display.textContent = display.textContent.slice(0, -1);
+      }
+
+      function enterKey() {
+        var display = document.getElementById("display");
+        let guess = display.textContent;
+        if (guess == code) {
+          clearInterval(timerId);
+          showModal("Congratulations! You've entered the correct code!");
+          launchConfetti(); // Launch confetti
+        } else {
+          alert("Incorrect Code");
+        }
+        display.textContent = "";
+      }
+      // document.addEventListener("DOMContentLoaded", launchConfetti);
+
+      function showModal(message) {
+        var modal = document.getElementById("myModal");
+        let showMessage = document.getElementById("message");
+        showMessage.textContent = message;
+
+        modal.style.display = "block";
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function () {
+          modal.style.display = "none";
+        };
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function (event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        };
+      }
+
+      function launchConfetti() {
+        var end = Date.now() + 5 * 1000;
+
+        // go Buckeyes!
+        var colors = ["#f0e929", "#03a1fc"];
+
+        (function frame() {
+          confetti({
+            particleCount: 2,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: colors,
+          });
+          confetti({
+            particleCount: 2,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: colors,
+          });
+
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+    </script>
+  </body>
+</html>
